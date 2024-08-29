@@ -260,6 +260,9 @@ class Village:
                 del self.network[household.id]
                 for c in self.network.values():
                     del c['connectivity'][household.id]
+                del self.network_relation[household.id]
+                for c in self.network_relation.values():
+                    del c['connectivity'][household.id]
 
 
     def check_consistency(self):

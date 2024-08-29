@@ -175,21 +175,23 @@ class Household:
 
             village.households.append(new_household)
 
-            new_household.create_network_connectivity_household_distance(village)
+            new_household.create_network_connectivity(village, village.network, True,
+                lambda x, y: max(0, 1/village.get_distance(x.location, y.location)))
+            new_household.create_network_connectivity(village, village.network_relation, False,
+                lambda x, y: 0)
             print(f'Household {self.id} splitted to {new_household.id}')
             
+    
+    def create_network_connectivity(self, village, network, include_luxury_goods, f):
+        if self.id not in network:
+            new_conn = {'connectivity': {}}
+            if include_luxury_goods:
+                new_conn['luxury_goods'] = self.luxury_good_storage
+            for other_household in village.households:
+                if other_household.id != self.id:
+                    new_conn['connectivity'][other_household.id] = f(self, other_household)
+                    network[other_household.id]['connectivity'][self.id] = f(other_household, self)
+            network[self.id] = new_conn
 
 
-    def create_network_connectivity_household_distance(self, village):
-        if self.id not in village.network:
-                village.network[self.id] = {
-                'connectivity': {},
-                'luxury_goods': self.luxury_good_storage
-            }
-        # village.update_network_connectivity()
-        print(village.households)
-        for other_household in village.households:
-            if other_household.id != self.id:
-                distance = village.get_distance(self.location, other_household.location)
-                village.network[self.id]['connectivity'][other_household.id] = max(0, 1/distance)
-                village.network[other_household.id]['connectivity'][self.id] = max(0, 1/distance)
+
