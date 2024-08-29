@@ -59,7 +59,7 @@ class Agent:
             return work_output
         return work_output
     
-    def age_and_die(self, household, village):
+    def age_and_die(self, household, village, z):
 
         """Simulate aging, survival, and reproduction based on probabilities."""
         if not self.is_alive:
@@ -68,10 +68,6 @@ class Agent:
         self.age += 1
         # Get z
         
-        total_food = sum(i for (i, j) in household.food_storage)
-        personal_portion = self.age/sum(agent.age for agent in household.members)
-        z = personal_portion/total_food if total_food > 0 else 0
-
         p0 = self.vec1.pstar * sp.gdtr(1.0 / self.vec1.mortscale, self.vec1.mortparms, z)
         m0 = self.vec1.mstar * sp.gdtr(1.0 / self.vec1.fertscale, self.vec1.fertparm, z)
         

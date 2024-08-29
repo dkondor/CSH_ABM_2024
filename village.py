@@ -339,17 +339,22 @@ class Village:
             
             dead_agents = []
             newborn_agents = []
-
+            total_food = sum(x for x, _ in household.food_storage)
+            total_food_needed = sum(agent.vec1.rho[agent.get_age_group_index()] for
+            	agent in household.members)
+            
             for agent in household.members:
-                agent.age_and_die(household,self)  
-
+                agent_food_needed= agent.vec1.rho[agent.get_age_group_index()]
+                z = total_food * agent_food_needed / total_food_needed
+                agent.age_and_die(household, self, z)
+            
                 if not agent.is_alive:
                     dead_agents.append(agent)
                 else:
                     if agent.newborn_agents:
                         newborn_agents.extend(agent.newborn_agents)
                         agent.newborn_agents = []
-
+            
             for agent in dead_agents:
                 household.remove_member(agent)
             # print(f"Household {household.id} had {len(dead_agents)} members die.")
