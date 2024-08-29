@@ -262,6 +262,83 @@ class Village:
                     del c['connectivity'][household.id]
 
 
+    def check_consistency(self):
+        """
+        Check that all components are consistent (i.e. no errors introduced)
+        """
+        
+        all_agents = set() # keep track of all agent IDs encountered
+        all_households = set() # all household IDs
+        
+        # 1. check all households and agents
+        for household in self.households:
+            if household.id in all_households:
+                raise BaseException('Duplicate household ID: {}!\n'.format(household.id))
+            all_households.add(household.id)
+            for agent in household.members:
+                # check that agent is alive (dead agents should be removed in run_simulaton_step() before running this check)
+                if not agent.is_alive:
+                    raise BaseException('Agent {} (household {}) is not alive!\n'.format(agent.id, household.id))
+                # check that agent does not have children stored (they should be moved out as household member in run_simulaton_step() before running this check)
+                if len(agent.newborn_agents) != 0:
+                    raise BaseException('Agent {} (household {}) has unprocessed children!\n'.format(agent.id, household.id))
+                if agent.id in all_agents:
+                    raise BaseException('Duplicate agent ID: {} (in household {})!\n'.format(agent.id, household.id))
+                all_agents.add(agent.id)
+                # check that household ID is consistent
+                if agent.household_id != household.id:
+                    raise BaseException('Household ID does not match for agent {} ({} != {})!\n'.format(agent.id, agent.household_id, household.id))
+                # check that marital status is consistent
+                if agent.marital_status == 'married':
+                    partner_id = agent.partner_id
+                    if partner_id is None:
+                        raise BaseException('Married agent {} (household {}) does not have a partner!\n'.format(agent.id, household.id))
+                    partner = None
+                    # find the partner (within the same household)
+                    for x in household.members:
+                        if x.id == partner_id:
+                            partner = x
+                            break
+                    if partner is None:
+                        raise BaseException('Cannot find partner (ID: {}) of agent {} in household {}!\n'.format(partner_id, agent.id, household.id))
+                    if partner.marital_status != 'married' or partner.partner_id is None or partner.partner_id != agent.id:
+                        raise BaseException('Marriage status inconsistent between agents {} and {} (household {})!\n'.format(agent.id, partner_id, household.id))
+                    # note: we could also check that both agents meet the criteria for being married (>= 14 years old, different gender),
+                    # but these are ensured by a simple condition when finding marriage partners, so it should be OK
+                elif agent.marital_status != 'single':
+                    raise BaseException('Invalid marital status for agent {} (household {})!\n'.format(agent.id, household.id))
+            
+        # 2. check network connections
+        # we want to ensure that all household_id pairs are in both the networks and also that no invalid IDs are in the networks
+        # 2.1. check that all household pairs are in both networks
+        for id1 in all_households:
+            for id2 in all_households:
+                if id1 < id2:
+                    # we check both ways in this case (note that this will also throw an exception if id1 
+                    # is not in the network)
+                    if id2 not in self.network[id1]['connectivity']:
+                        raise BaseException('Network is missing {} -> {} link!\n'.format(id1, id2))
+                    if id1 not in self.network[id2]['connectivity']:
+                        raise BaseException('Network is missing {} -> {} link!\n'.format(id2, id1))
+                    if id2 not in self.network_relation[id1]['connectivity']:
+                        raise BaseException('Relation network is missing {} -> {} link!\n'.format(id1, id2))
+                    if id1 not in self.network_relation[id2]['connectivity']:
+                        raise BaseException('Relation network is missing {} -> {} link!\n'.format(id2, id1))
+        
+        # 2.2. check that all IDs in the networks are valid households
+        for id1 in self.network:
+            if id1 not in all_households:
+                raise BaseException('Household ID {} is in the network, but does not exist!\n'.format(id1))
+            for id2 in self.network[id1]['connectivity']:
+                if id2 not in all_households:
+                    raise BaseException('Household ID {} is in the network, but does not exist!\n'.format(id2))
+        for id1 in self.network_relation:
+            if id1 not in all_households:
+                raise BaseException('Household ID {} is in the relation network, but does not exist!\n'.format(id1))
+            for id2 in self.network_relation[id1]['connectivity']:
+                if id2 not in all_households:
+                    raise BaseException('Household ID {} is in the relation network, but does not exist!\n'.format(id2))
+    
     def run_simulation_step(self, vec1):
         
         """Run a single simulation step (year)."""
@@ -314,7 +391,8 @@ class Village:
         self.trading()
         self.update_network_connectivity()
         self.time += 1
-       
+        
+        self.check_consistency()
     
     def update_land_capacity(self):
         """Update the land quality for each land cell in the village."""
