@@ -12,7 +12,7 @@ class Household:
         self.members = members
         self.location = location  
         self.food_storage = []
-        self.food_storage_timestamps = []
+        # self.food_storage_timestamps = []
         self.luxury_good_storage = 0
         self.current_step = 0
         self.food_expiration_steps = 3
@@ -63,34 +63,35 @@ class Household:
         self.update_food_storage()
         # print(f"Household {self.id} produced {production_amount} units of food.")
     
+    def remove_food(self, amount):
+        """
+        Remove the given amount of food from this household.
+        Does not keep track of the expiry of the removed food.
+        Returns the actual amount of food removed (can be less than amount, if storage is too low).
+        """
+        for i in range(len(self.food_storage)):
+            removed = 0
+            if self.food_storage[i][0] > amount:
+                # note: tuples are immutable, so we cannot do self.food_storage[i][0] -= amount
+                self.food_storage[i] = (self.food_storage[i][0] - amount, self.food_storage[i][1])
+                removed += amount
+                break
+            else:
+                amount -= self.food_storage[i][0]
+                removed += self.food_storage[i][0]
+                self.food_storage[i] = (0, 0)
+        self.food_storage = list((x, y) for x, y in self.food_storage if x > 0)
+        return removed
+    
     def consume_food(self):
         """Simulate food consumption by household members."""
         total_food_needed = sum(member.vec1.rho[member.get_age_group_index()] for member in self.members)
         self.food_storage.sort(key=lambda x: x[1])
-        # remove expired food
-        self.food_storage = [(amount, age_added) for amount, age_added in self.food_storage
-                             if self.current_step - age_added < self.food_expiration_steps]
-
-        # self.food_storage_timestamps = [(amount, timestamp) for amount, timestamp in self.food_storage_timestamps]
-        #  if self.time - timestamp < 3
+        # remove expired food -- TODO: I don't think it is needed here !!
+        self.update_food_storage()
         total_available_food = sum(amount for amount, _ in self.food_storage)
-        
-        if total_available_food >= total_food_needed:
-            food_to_consume = total_food_needed
-            for i, (amount, age_added) in enumerate(self.food_storage):
-                if food_to_consume <= amount:
-                    self.food_storage[i] = (amount - food_to_consume, age_added)
-                    break
-                else:
-                    self.food_storage.pop(i)
-                    food_to_consume -= amount
-            # print(f"Household {self.id} consumed {total_food_needed:.2f} units of food.")
-        else:
-            # print(f"Household {self.id} does not have enough food. Consuming all available food.")
-            self.food_storage = []
-            # print(f'Attention, there is not enough food for familly{self.household_id}')
-
-        # print('Household total food need:', total_food_needed, '\n', 'Household total availabel food', total_available_food)
+        consumed = self.remove_food(total_food_needed)
+        print('Household total food need: ', total_food_needed, '\n', 'Household total available food: ', total_available_food, '\nFood consumed: ', consumed)
 
     def get_distance(self, location1, location2):
         x1, y1 = map(int, location1.split(','))
@@ -159,7 +160,7 @@ class Household:
             
             new_household = Household(
                # new_household_id,
-                food_storage=[(new_food_storage, 0)],
+                food_storage=new_food_storage.copy(),
                 luxury_good_storage=new_luxury_good_storage,
                 members=new_household_members,
                 location = None

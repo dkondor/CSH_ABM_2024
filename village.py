@@ -115,16 +115,8 @@ class Village:
                 household.luxury_good_storage += max_luxury_goods
                 self.luxury_goods_in_village -= max_luxury_goods
                 food_to_exchange = max_luxury_goods * 10 
-                
-                for amount, age_added in household.food_storage:
-                    if food_to_exchange <= amount:
-                        household.food_storage[0] = (amount - food_to_exchange, age_added)
-                        break
-                    else:
-                        household.food_storage.pop(0)
-                        food_to_exchange -= amount
-            
-                self.spare_food.append((max_luxury_goods, self.time))
+                household.remove_food(food_to_exchange)
+                self.spare_food.append((food_to_exchange, self.time))
                 print(f"Household {household.id} exchanged {max_luxury_goods} luxury good from village in year {self.time}")
         # self.luxury_goods_in_village += 1 
         # food should still be usable after trading. # pair family with the links
@@ -185,15 +177,7 @@ class Village:
         # print("food_to_trade", food_to_trade)
         # print("luxury_goods_to_trade", luxury_goods_to_trade)
         if luxury_goods_to_trade > 0:
-            remaining_food_to_trade = food_to_trade # to get more luxury goods
-            for amount, age_added in food_household.food_storage: # food_household: with too much food
-                if remaining_food_to_trade <= amount:
-                    food_household.food_storage[0] = (amount - remaining_food_to_trade, age_added)
-                    break
-                else:
-                    food_household.food_storage.pop(0)
-                    remaining_food_to_trade -= amount
-
+            food_household.remove_food(food_to_trade)
             food_household.luxury_good_storage += luxury_goods_to_trade
             luxury_household.luxury_good_storage -= luxury_goods_to_trade
 
