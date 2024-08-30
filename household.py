@@ -79,9 +79,8 @@ class Household:
         self.food_storage = list((x, y) for x, y in self.food_storage if x > 0)
         return removed
 
-    def consume_food(self):
+    def consume_food(self, total_food_needed):
         """Simulate food consumption by household members."""
-        total_food_needed = sum(member.vec1.rho[member.get_age_group_index()] for member in self.members)
         self.food_storage.sort(key=lambda x: x[1])
         # remove expired food -- TODO: I don't think it is needed here !!
         self.update_food_storage()

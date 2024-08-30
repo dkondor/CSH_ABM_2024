@@ -379,20 +379,17 @@ class Village:
             total_food_needed = sum(agent.vec1.rho[agent.get_age_group_index()] for
             	agent in household.members)
 
-            z = total_food * total_food_needed
-
             """ Take spare food for the poor""" # can comment out if not needed.
-            if z < 0.5 and len(self.spare_food) != 0:
-                food_need = len(household.members)
+            if total_food < total_food_needed and len(self.spare_food) != 0:
+                food_need = total_food_needed - total_food
                 amount_get = self.reduce_food_from_village(household, food_need)
                 household.add_food(amount_get)
                 total_food += amount_get
-                # z = total_food * total_food_needed
                 print(f"Household {household.id} get {amount_get} from the Village.")
             """ Take spare food for the poor"""
 
             for agent in household.members:
-                agent_food_needed= agent.vec1.rho[agent.get_age_group_index()]
+                agent_food_needed = agent.vec1.rho[agent.get_age_group_index()]
                 z = total_food * agent_food_needed / total_food_needed
                 
                 agent.age_and_die(household, self, z)
@@ -412,8 +409,10 @@ class Village:
                 household.extend(child)
             print(f"Household {household.id} had {len(newborn_agents)} newborns.")
 
-            household.consume_food()
+            household.consume_food(total_food_needed)
             self.remove_empty_household(household)
+            
+        for household in self.households:
             self.migrate_household(household)
             self.propose_marriage(household) # if choose to comment out this line, please also comment out 
 
