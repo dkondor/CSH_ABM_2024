@@ -79,7 +79,7 @@ class Agent:
         age_index = self.get_age_group_index()
         
         survival_probability = self.vec1.pstar[age_index] * sp.gdtr(1.0 / self.vec1.mortscale, self.vec1.mortparms[age_index], z)
-        fertility_probability = self.vec1.mstar[age_index] * sp.gdtr(1.0 / self.vec1.fertscale, self.vec1.fertparm, z) * 5
+        fertility_probability = self.vec1.mstar[age_index] * sp.gdtr(1.0 / self.vec1.fertscale, self.vec1.fertparm, z) *2
         
         # survival_probability = p0[age_index]  # survival probability
 
