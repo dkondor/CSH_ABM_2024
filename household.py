@@ -120,7 +120,7 @@ class Household:
             # self.members.sort(key=lambda x: order.get(x.marital_status, 2)) 
             # TODO: can pick randomly
 
-            members_to_leave = len(self.members)
+            members_to_leave = len(self.members) // 2
             mixed_members = []
 
             # i, j = 0, len(self.members) - 1
