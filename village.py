@@ -513,30 +513,11 @@ class Village:
             land_quality = land['quality']
             land_max_capacity = land['max_capacity']
             land_recovery_rate = land['recovery_rate']
-            farming_intensity = 0
-            # check if there's a household at this location
-            household = next((hh for hh in self.households if hh.location == location), None)
-            
-            if household is not None:
-                farming_intensity = len(household.members)
-
-                if farming_intensity == 0:
-                    # self.remove_household(household)
-                    land['occupied'] = False
-
-                    # land['household_id'] = None
-                    # print(f"Land at {location} is now unoccupied.")
-                
-            else:
-                # If no household is found, land remains unoccupied
-                land['occupied'] = False
-                # land['household_id'] = None
-                # # print(f"Land at {location} remains unoccupied.")            
-
+            farming_intensity = land['farming_intensity']
             new_quality = (
                         land_quality +
                         land_recovery_rate * (land_max_capacity - land_quality) 
-                        - farming_intensity ** 2 * land_quality * land_depreciate_factor # 0.01 # this 0.01 is an important factor that influence everything, can be changed
+                        - farming_intensity * land_quality * land_depreciate_factor # 0.01 # this 0.01 is an important factor that influence everything, can be changed
                     )
             land['quality'] = max(0, min(new_quality, land_max_capacity))
             # print(f"Land at {location} updated to quality {land['quality']:.2f}.")
